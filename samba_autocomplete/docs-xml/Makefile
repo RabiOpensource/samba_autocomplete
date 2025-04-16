@@ -8,9 +8,24 @@ include Makefile.settings
 
 export XML_CATALOG_FILES := $(XML_CATALOG_FILES) /etc/xml/catalog  $(shell pwd)/build/catalog.xml
 
+FILTER_FILE = $(wildcard $(MANPAGEDIR)/smbspool.?.xml \
+	      $(MANPAGEDIR)/smbspool_krb5_wrapper.?.xml \
+	      $(MANPAGEDIR)/smb.conf.?.xml \
+	      $(MANPAGEDIR)/smbpasswd.?.xml)
+
+
 # Docs to build
 MAIN_DOCS = $(patsubst %/index.xml,%,$(wildcard */index.xml))
 MANPAGES = $(sort $(wildcard $(MANPAGEDIR)/*.?.xml))
+
+AUTOCOMPLETE = smbclient.1.xml smbpasswd.8.xml smbd.8.xml
+
+define CREATE_RULE
+$(AUTOCOMPLETEDIR)/$(basename $(basename $(1))): $(DOCBOOKDIR)/manpages/$(1) $(DOCBOOKDIR)/manpages/smb.conf.5.xml 
+	@mkdir -p $(AUTOCOMPLETEDIR)
+	$(AUTOCOMPLETESCRIPT) --output $$@ $$<
+endef
+$(foreach cmd, $(AUTOCOMPLETE), $(eval $(call CREATE_RULE,$(cmd))))
 
 # Lists of files to process
 DBLATEX_OPTIONS = -p xslt/latex.xsl -i xslt/latex
@@ -40,13 +55,14 @@ help:
 	@echo " html - Build multi-file HTML versions"
 	@echo " html-single - Build single-file HTML versions"
 	@echo " htmlman - Build HTML version of manpages"
+	@echo " autocompletes - Build auto complete script for samba"
 
 $(PDFDIR)/Samba3-Developers-Guide.pdf $(PSDIR)/Samba3-Developers-Guide.ps $(DOCBOOKDIR)/Samba3-Developers-Guide.xml Samba3-Developers-Guide.tex: $(wildcard Samba3-Developers-Guide/*.xml) Samba3-Developers-Guide-attributions.xml
 
 # Pseudo targets 
 all:: $(TARGETS)
-everything:: manpages pdf html-single html htmlman ps fo htmlhelp
-release:: manpages htmlman html pdf
+everything:: manpages autocompletes pdf html-single html htmlman ps fo htmlhelp
+release:: manpages htmlman html pdf autocomplete
 clean::
 	@echo "Cleaning up..." 
 	rm -rf $(OUTPUTDIR)/* $(DOCBOOKDIR)
@@ -69,11 +85,11 @@ html-single:: $(patsubst %,$(HTMLDIR)/%.html,$(MAIN_DOCS))
 html:: $(patsubst %,$(HTMLDIR)/%/index.html,$(MAIN_DOCS)) $(HTMLDIR)/index.html
 htmlhelp:: $(addprefix $(HTMLHELPDIR)/,$(MAIN_DOCS))
 validate:: $(addsuffix -validate,$(MAIN_DOCS))
-
+autocompletes::  $(addprefix $(AUTOCOMPLETEDIR)/, $(basename $(basename $(AUTOCOMPLETE))))
 test:: validate
 check:: validate
 
-.PHONY: test check validate manpages
+.PHONY: test1 check validate manpages
 
 # Intermediate docbook docs
 #
@@ -90,7 +106,6 @@ $(DOCBOOKDIR)/manpages/index.xml: $(MANPAGES) xslt/manpage-summary.xsl $(XSLTPRO
 	@mkdir -p $(@D)
 	echo "<article><variablelist>" > $@
 	$(XSLTPROC) xslt/manpage-summary.xsl $(MANPAGES) >> $@
-	@echo "</variablelist></article>" >> $@
 
 # HTML docs
 $(HTMLDIR)/index.html: htmldocs.html
@@ -107,6 +122,7 @@ $(OUTPUTDIR)/%/samba.css: xslt/html/samba.css $(XSLTPROC_DEPS)
 	cp $< $@
 
 $(patsubst %,$(HTMLDIR)/%.html,$(MAIN_DOCS)): $(HTMLDIR)/%.html: %-images-html-single
+	
 
 $(HTMLDIR)/%.html: $(DOCBOOKDIR)/%.xml $(HTMLDIR)/samba.css xslt/html.xsl $(XSLTPROC_DEPS)
 	$(XSLTPROC) --output $@ xslt/html.xsl $<
