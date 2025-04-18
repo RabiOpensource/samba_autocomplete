@@ -1222,6 +1222,35 @@ def SAMBAMANPAGES(bld, manpages, extra_source=None):
         bld.INSTALL_FILES('${MANDIR}/man%s' % m[-1], m, flat=True)
 Build.BuildContext.SAMBAMANPAGES = SAMBAMANPAGES
 
+def AUTOCOMPLETEBUILD(bld, autocompletes):
+    bld.env.SAMBA_EXPAND_XSL = bld.srcnode.abspath() + '/docs-xml/xslt/expand-sambadoc.xsl'
+    bld.env.SAMBA_MAN_XSL = bld.srcnode.abspath() + '/docs-xml/xslt/man.xsl'
+    bld.env.SAMBA_CATALOG = bld.bldnode.abspath() + '/docs-xml/build/catalog.xml'
+    bld.env.SAMBA_CATALOGS = os.getenv('XML_CATALOG_FILES', 'file:///etc/xml/catalog file:///usr/local/share/xml/catalog') + ' file://' + bld.env.SAMBA_CATALOG
+
+    for m in autocompletes.split():
+        source = ['manpages/' + m + '.xml']
+        targetfile = 'autocomplete/' + m.split('.')[0]
+        source += ['build/DTD/samba.build.pathconfig', 'build/DTD/samba.entities', 'build/DTD/samba.build.version']
+        bld.SAMBA_GENERATOR(targetfile,
+                            source=source,
+                            target=targetfile,
+                            group='final',
+                            dep_vars=['SAMBA_MAN_XSL', 'SAMBA_EXPAND_XSL', 'SAMBA_CATALOG'],
+                            rule='''XML_CATALOG_FILES="${SAMBA_CATALOGS}"
+                                    export XML_CATALOG_FILES
+                                    if [ ! -f ${TGT}.xml ]; then 
+                                        if [ ! -f docs-xml/manpages/smb.conf.5.xml ]; then
+                                            ${XSLTPROC} --xinclude --stringparam noreference 0 -o docs-xml/manpages/smb.conf.5.xml --nonet ${SAMBA_EXPAND_XSL} ${SRC[0].abspath(env)}
+                                        fi
+                                    fi
+                                    ${XSLTPROC} --xinclude --stringparam noreference 0 -o ${TGT}.xml --nonet ${SAMBA_EXPAND_XSL} ${SRC[0].abspath(env)}
+                                    ${AUTOCOMPLETESCRIPT} --output ${TGT} ${TGT}.xml'''
+                            )
+        bld.INSTALL_FILES('${BASHCOMPLITIONDIR}/man%s' % m[-1], m, flat=True)
+Build.BuildContext.AUTOCOMPLETEBUILD = AUTOCOMPLETEBUILD
+
+
 @after('apply_link')
 @feature('cshlib')
 def apply_bundle_remove_dynamiclib_patch(self):

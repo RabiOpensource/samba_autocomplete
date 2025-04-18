@@ -119,6 +119,19 @@ vfs_module_manpages = ['vfs_acl_tdb',
                        'vfs_xattr_tdb',
                        'vfs_zfsacl' ]
 
+autocompletescripts='''         
+         net.8
+         smbcacls.1
+         smbclient.1
+         smbcontrol.1
+         smbcquotas.1
+         smbd.8
+         smbget.1
+         smbstatus.1
+         smbtar.1
+         smbtree.1
+         '''
+
 def generate_path_entity_list():
     entities = bld.pathconfig_entities()
 
@@ -207,3 +220,7 @@ if ('XSLTPROC_MANPAGES' in bld.env and bld.env['XSLTPROC_MANPAGES']):
     for manpage in vfs_module_manpages:
         if bld.SAMBA3_IS_ENABLED_MODULE(manpage):
             bld.SAMBAMANPAGES('manpages/%s.8' % manpage)
+
+if ('AUTOCOMPLETE' in bld.env and bld.env['AUTOCOMPLETE']):
+    ''' building autocomplete scripts for samba'''
+    bld.AUTOCOMPLETEBUILD(autocompletescripts)
