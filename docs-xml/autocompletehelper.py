@@ -1,9 +1,10 @@
 #!/bin/python3
 
 from lxml import etree
+import os
 
-# Parse the XML file
-tree = etree.parse('tmp/manpages/smb.conf.5.xml')
+
+tree = etree.parse('docs-xml/manpages/smb.conf.5.xml')
 root = tree.getroot()
 
 def pathSplit(path):
@@ -91,6 +92,8 @@ def getHost():
 
 
 def getSectionfromAnchor(anchorAttrib):
+    if (root == '' or root == None):
+        parseSmbConf()
     sectionLists = root.xpath('//section')
     for section in sectionLists:
         if ((section == None) or (section == '')):

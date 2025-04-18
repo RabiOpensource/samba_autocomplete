@@ -18,7 +18,7 @@ FILTER_FILE = $(wildcard $(MANPAGEDIR)/smbspool.?.xml \
 MAIN_DOCS = $(patsubst %/index.xml,%,$(wildcard */index.xml))
 MANPAGES = $(sort $(wildcard $(MANPAGEDIR)/*.?.xml))
 
-AUTOCOMPLETE = smbclient.1.xml smbpasswd.8.xml smbd.8.xml
+AUTOCOMPLETE = smbclient.1.xml smbpasswd.8.xml smbd.8.xml smbcontrol.1.xml net.8.xml 
 
 define CREATE_RULE
 $(AUTOCOMPLETEDIR)/$(basename $(basename $(1))): $(DOCBOOKDIR)/manpages/$(1) $(DOCBOOKDIR)/manpages/smb.conf.5.xml 

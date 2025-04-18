@@ -158,6 +158,5 @@ def main():
     buildAutoCompleteScript(cmdInfo)  
     writeAutoCompletionCodeToFile(cmdInfo)
     deInitAutoComplete(cmdInfo)
-
 if __name__ == "__main__":
     main()
